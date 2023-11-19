@@ -86,6 +86,10 @@ export class ApiLambdaStack extends cdk.Stack {
           statusCode: "200",
           responseModels: { "application/json": productListModel },
         },
+        {
+          statusCode: "404",
+          responseModels: { "application/json": apigw.Model.ERROR_MODEL },
+        },
       ],
     });
 
@@ -95,6 +99,10 @@ export class ApiLambdaStack extends cdk.Stack {
         {
           statusCode: "200",
           responseModels: { "application/json": productModel },
+        },
+        {
+          statusCode: "404",
+          responseModels: { "application/json": apigw.Model.ERROR_MODEL },
         },
       ],
     });

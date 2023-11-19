@@ -1,15 +1,26 @@
-export const handler = async (): Promise<{
-  statusCode: number;
-  body: string;
-}> => {
+import { products } from "./mockData";
+
+import { APIGatewayEvent, Handler } from "aws-lambda";
+
+export const handler: Handler<APIGatewayEvent> = async (event) => {
+  const productId = event["pathParameters"]?.["id"];
+  const product = products.find((p) => p.id === productId);
+  if (!product) {
+    return {
+      statusCode: 404,
+      body: JSON.stringify({
+        message: "Product not found",
+      }),
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+    };
+  }
   return {
     statusCode: 200,
-    body: JSON.stringify({
-      description: "Short Product Description1",
-      id: "7567ec4b-b10c-48c5-9345-fc73c48a80aa",
-      price: 24,
-      title: "ProductOne",
-      count: 1,
-    }),
+    body: JSON.stringify(product),
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+    },
   };
 };

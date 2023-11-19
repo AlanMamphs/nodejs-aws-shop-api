@@ -1,12 +1,5 @@
 import * as cdk from "aws-cdk-lib";
-import {
-  IResource,
-  LambdaIntegration,
-  MockIntegration,
-  PassthroughBehavior,
-  RestApi,
-  Cors
-} from "aws-cdk-lib/aws-apigateway";
+import * as apigw from "aws-cdk-lib/aws-apigateway";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import {
   NodejsFunction,
@@ -15,6 +8,8 @@ import {
 import { SwaggerUi } from "@pepperize/cdk-apigateway-swagger-ui";
 import { Construct } from "constructs";
 import { join } from "path";
+
+import { productModelJsonSchema } from "./jsonSchemas";
 
 export class ApiLambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -40,16 +35,20 @@ export class ApiLambdaStack extends cdk.Stack {
     });
 
     // Integrate the Lambda functions with the API Gateway resource
-    const getProductsListIntegration = new LambdaIntegration(getProductsList);
-    const getProductsByIdIntegration = new LambdaIntegration(getProductsById);
+    const getProductsListIntegration = new apigw.LambdaIntegration(
+      getProductsList
+    );
+    const getProductsByIdIntegration = new apigw.LambdaIntegration(
+      getProductsById
+    );
 
     // Create an API Gateway resource for each of the CRUD operations
-    const api = new RestApi(this, "productsAPI", {
+    const api = new apigw.RestApi(this, "productsAPI", {
       restApiName: "Products Service",
       defaultCorsPreflightOptions: {
-        allowOrigins: Cors.ALL_ORIGINS,
-        allowMethods: Cors.ALL_METHODS,
-        allowHeaders: Cors.DEFAULT_HEADERS,
+        allowOrigins: apigw.Cors.ALL_ORIGINS,
+        allowMethods: apigw.Cors.ALL_METHODS,
+        allowHeaders: apigw.Cors.DEFAULT_HEADERS,
       },
       deployOptions: {
         stageName: "dev",
@@ -58,12 +57,47 @@ export class ApiLambdaStack extends cdk.Stack {
       // binaryMediaTypes: ["*/*"],
     });
 
+    const productModel = new apigw.Model(this, "ProductModel", {
+      restApi: api,
+      schema: {
+        schema: apigw.JsonSchemaVersion.DRAFT4,
+        ...productModelJsonSchema,
+      },
+      contentType: "application/json",
+    });
+
+    const productListModel = new apigw.Model(this, "ProductListModel", {
+      restApi: api,
+      schema: {
+        schema: apigw.JsonSchemaVersion.DRAFT4,
+        title: "ProductList",
+        type: apigw.JsonSchemaType.ARRAY,
+        items: {
+          ...productModelJsonSchema,
+        },
+      },
+      contentType: "application/json",
+    });
 
     const products = api.root.addResource("products");
-    products.addMethod("GET", getProductsListIntegration);
+    products.addMethod("GET", getProductsListIntegration, {
+      methodResponses: [
+        {
+          statusCode: "200",
+          responseModels: { "application/json": productListModel },
+        },
+      ],
+    });
 
     const singleProduct = products.addResource("{id}");
-    singleProduct.addMethod("GET", getProductsByIdIntegration);
+    singleProduct.addMethod("GET", getProductsByIdIntegration, {
+      methodResponses: [
+        {
+          statusCode: "200",
+          responseModels: { "application/json": productModel },
+        },
+      ],
+    });
 
     new SwaggerUi(this, "SwaggerUI", { resource: api.root });
   }

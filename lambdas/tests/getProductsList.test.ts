@@ -6,7 +6,7 @@ import { products } from "../mockData";
 // and returns product object
 
 describe("getProductsById", () => {
-  test("should return product object", async () => {
+  test("should return products list", async () => {
     // @ts-expect-error Event is mocked
     const result = await handler({}, {}, () => {});
     expect(result.statusCode).toBe(200);

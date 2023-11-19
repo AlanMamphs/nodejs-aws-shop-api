@@ -8,8 +8,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk",
-    "deploy:cdk": "cdk deploy"
+    "test:lambdas": "cd lambdas; npm run test",
+    "cdk": "cdk"
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.7.0",

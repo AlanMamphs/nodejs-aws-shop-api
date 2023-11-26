@@ -16,41 +16,33 @@ describe("getProductsById", () => {
   beforeAll(async () => {
     for (const product of products) {
       const { count, ...rest } = product;
-      await ddb
-        .put({
-          TableName: PRODUCT_TABLE_NAME,
-          Item: rest,
-        })
-        .promise();
-      await ddb
-        .put({
-          TableName: STOCK_TABLE_NAME,
-          Item: {
-            product_id: rest.id,
-            count: count,
-          },
-        })
-        .promise();
+      await ddb.put({
+        TableName: PRODUCT_TABLE_NAME,
+        Item: rest,
+      });
+      await ddb.put({
+        TableName: STOCK_TABLE_NAME,
+        Item: {
+          product_id: rest.id,
+          count: count,
+        },
+      });
     }
   });
   afterAll(async () => {
     for (const product of products) {
-      await ddb
-        .delete({
-          TableName: PRODUCT_TABLE_NAME,
-          Key: {
-            [PRODUCT_PRIMARY_KEY]: product.id,
-          },
-        })
-        .promise();
-      await ddb
-        .delete({
-          TableName: STOCK_TABLE_NAME,
-          Key: {
-            [STOCK_PRIMARY_KEY]: product.id,
-          },
-        })
-        .promise();
+      await ddb.delete({
+        TableName: PRODUCT_TABLE_NAME,
+        Key: {
+          [PRODUCT_PRIMARY_KEY]: product.id,
+        },
+      });
+      await ddb.delete({
+        TableName: STOCK_TABLE_NAME,
+        Key: {
+          [STOCK_PRIMARY_KEY]: product.id,
+        },
+      });
     }
   });
   test("should return products list", async () => {

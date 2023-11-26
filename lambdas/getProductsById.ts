@@ -1,12 +1,11 @@
 import { APIGatewayEvent, Handler } from "aws-lambda";
 import { lambdaResp, withLogger } from "./utils";
 
-import {
-  PRODUCT_TABLE_NAME,
-  PRODUCT_PRIMARY_KEY,
-  STOCK_TABLE_NAME,
-  STOCK_PRIMARY_KEY,
-} from "./constants";
+const PRODUCT_TABLE_NAME = process.env.PRODUCT_TABLE_NAME || "Products";
+const STOCK_TABLE_NAME = process.env.STOCK_TABLE_NAME || "Stock";
+const PRODUCT_PRIMARY_KEY = process.env.PRODUCT_PRIMARY_KEY || "id";
+const STOCK_PRIMARY_KEY = process.env.STOCK_PRIMARY_KEY || "product_id";
+
 import { ddb } from "./dynamoDBClient";
 
 const getProductById = (productId: string) => {
@@ -16,7 +15,7 @@ const getProductById = (productId: string) => {
       [PRODUCT_PRIMARY_KEY]: productId,
     },
   };
-  return ddb.get(params).promise();
+  return ddb.get(params);
 };
 
 const getStockByProductId = (productId: string) => {
@@ -26,7 +25,7 @@ const getStockByProductId = (productId: string) => {
       [STOCK_PRIMARY_KEY]: productId,
     },
   };
-  return ddb.get(params).promise();
+  return ddb.get(params);
 };
 
 export const handler: Handler<APIGatewayEvent> = withLogger(async (event) => {

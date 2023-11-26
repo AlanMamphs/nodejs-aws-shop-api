@@ -4,7 +4,7 @@ import * as uuid from "uuid";
 import {
   PRODUCT_TABLE_NAME,
   STOCK_TABLE_NAME,
-} from "../lambdas/constants";
+} from "../constants";
 
 const dynamoDB = DynamoDBDocument.from(new DynamoDB());
 

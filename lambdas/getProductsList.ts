@@ -1,17 +1,17 @@
-import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
-import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { APIGatewayEvent, Handler } from "aws-lambda";
 import { lambdaResp, withLogger } from "./utils";
-import { PRODUCT_TABLE_NAME, STOCK_TABLE_NAME } from "./constants";
 
 import { ddb } from "./dynamoDBClient";
+
+const PRODUCT_TABLE_NAME = process.env.PRODUCT_TABLE_NAME || "Products";
+const STOCK_TABLE_NAME = process.env.STOCK_TABLE_NAME || "Stock";
 
 const scanProducts = async () => {
   const params = {
     TableName: PRODUCT_TABLE_NAME,
   };
 
-  return ddb.scan(params).promise();
+  return ddb.scan(params);
 };
 
 const scanStocks = async () => {
@@ -19,7 +19,7 @@ const scanStocks = async () => {
     TableName: STOCK_TABLE_NAME,
   };
 
-  return ddb.scan(params).promise();
+  return ddb.scan(params);
 };
 
 export const handler: Handler<APIGatewayEvent> = withLogger(async () => {

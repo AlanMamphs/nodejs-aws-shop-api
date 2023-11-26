@@ -37,7 +37,6 @@ describe("createProduct", () => {
           [PRODUCT_PRIMARY_KEY]: products[0].id,
         },
       })
-      .promise();
 
     const stock = await ddb
       .get({
@@ -46,7 +45,6 @@ describe("createProduct", () => {
           [STOCK_PRIMARY_KEY]: products[0].id,
         },
       })
-      .promise();
     const { count, id, ...rest } = products[0];
 
     expect(product.Item).toEqual({ id, ...rest });

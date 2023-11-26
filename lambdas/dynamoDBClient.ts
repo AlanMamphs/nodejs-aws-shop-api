@@ -1,13 +1,23 @@
-import { DocumentClient } from "aws-sdk/clients/dynamodb";
+import { DynamoDB } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 
 const isTest = process.env.JEST_WORKER_ID;
-const config = {
-  convertEmptyValues: true,
-  ...(isTest && {
-    endpoint: "localhost:8000",
-    sslEnabled: false,
-    region: "local-env",
-  }),
-};
 
-export const ddb = new DocumentClient(config);
+export const ddb = DynamoDBDocument.from(
+  new DynamoDB({
+    ...(isTest && {
+      endpoint: "http://localhost:8000",
+      sslEnabled: false,
+      region: "local-env",
+      credentials: {
+        accessKeyId: "fakeMyKeyId",
+        secretAccessKey: "fakeSecretAccessKey",
+      },
+    }),
+  }),
+  {
+    marshallOptions: {
+      convertEmptyValues: true,
+    },
+  }
+);

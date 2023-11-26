@@ -4,7 +4,10 @@ import { v4 as uuidv4 } from "uuid";
 import { ddb } from "./dynamoDBClient";
 import { lambdaResp, withLogger } from "./utils";
 
-import { PRODUCT_TABLE_NAME, STOCK_TABLE_NAME } from "./constants";
+const PRODUCT_TABLE_NAME = process.env.PRODUCT_TABLE_NAME || "Products";
+const STOCK_TABLE_NAME = process.env.STOCK_TABLE_NAME || "Stock";
+const PRODUCT_PRIMARY_KEY = process.env.PRODUCT_PRIMARY_KEY || "id";
+const STOCK_PRIMARY_KEY = process.env.STOCK_PRIMARY_KEY || "product_id";
 
 const generateProductId = () => uuidv4();
 
@@ -21,14 +24,14 @@ export const handler: Handler<APIGatewayEvent> = withLogger(async (event) => {
   const productId = generateProductId();
 
   const product = {
-    id: productId,
+    [PRODUCT_PRIMARY_KEY]: productId,
     title,
     description,
     price,
   };
 
   const stock = {
-    product_id: productId,
+    [STOCK_PRIMARY_KEY]: productId,
     count,
   };
 
@@ -50,7 +53,7 @@ export const handler: Handler<APIGatewayEvent> = withLogger(async (event) => {
   };
 
   try {
-    const result = await ddb.transactWrite(params).promise();
+    const result = await ddb.transactWrite(params);
     console.log("Transaction Result:", result);
     return lambdaResp({ statusCode: 201, body: {} });
   } catch (dbError) {

@@ -13,39 +13,35 @@ import {
 
 describe("getProductsById", () => {
   beforeAll(async () => {
-    await ddb
-      .put({
-        TableName: PRODUCT_TABLE_NAME,
-        Item: products[0],
-      })
-      .promise();
-    await ddb
-      .put({
-        TableName: STOCK_TABLE_NAME,
-        Item: {
-          product_id: products[0].id,
-          count: products[0].count,
-        },
-      })
-      .promise();
+    const { count, id, ...rest } = products[0];
+    await ddb.put({
+      TableName: PRODUCT_TABLE_NAME,
+      Item: {
+        id,
+        ...rest,
+      },
+    });
+    await ddb.put({
+      TableName: STOCK_TABLE_NAME,
+      Item: {
+        product_id: id,
+        count,
+      },
+    });
   });
   afterAll(async () => {
-    await ddb
-      .delete({
-        TableName: PRODUCT_TABLE_NAME,
-        Key: {
-          [PRODUCT_PRIMARY_KEY]: products[0].id,
-        },
-      })
-      .promise();
-    await ddb
-      .delete({
-        TableName: STOCK_TABLE_NAME,
-        Key: {
-          [STOCK_PRIMARY_KEY]: products[0].id,
-        },
-      })
-      .promise();
+    await ddb.delete({
+      TableName: PRODUCT_TABLE_NAME,
+      Key: {
+        [PRODUCT_PRIMARY_KEY]: products[0].id,
+      },
+    });
+    await ddb.delete({
+      TableName: STOCK_TABLE_NAME,
+      Key: {
+        [STOCK_PRIMARY_KEY]: products[0].id,
+      },
+    });
   });
   test("should return product object", async () => {
     const event = {

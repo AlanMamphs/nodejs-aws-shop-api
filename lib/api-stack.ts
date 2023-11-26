@@ -63,6 +63,12 @@ export class ApiLambdaStack extends cdk.Stack {
           "@aws-sdk/lib-dynamodb",
         ],
       },
+      environment: {
+        PRODUCT_TABLE_NAME,
+        PRODUCT_PRIMARY_KEY,
+        STOCK_TABLE_NAME,
+        STOCK_PRIMARY_KEY,
+      },
       depsLockFilePath: join(__dirname, "..", "lambdas", "package-lock.json"),
       runtime: Runtime.NODEJS_18_X,
     };

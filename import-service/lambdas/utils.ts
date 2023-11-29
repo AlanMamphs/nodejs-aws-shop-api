@@ -17,8 +17,8 @@ export const lambdaResp = ({
   },
 });
 
-export const withLogger = (handler: Handler<APIGatewayEvent>) => {
-  return async (event: APIGatewayEvent, context: Context) => {
+export const withLogger = <T = APIGatewayEvent>(handler: Handler<T>) => {
+  return async (event: T, context: Context) => {
     try {
       // Log the incoming event
       console.log("Incoming Event:", JSON.stringify(event, null, 2));
@@ -40,3 +40,4 @@ export const withLogger = (handler: Handler<APIGatewayEvent>) => {
     }
   };
 };
+

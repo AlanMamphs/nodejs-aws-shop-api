@@ -17,6 +17,8 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import { join } from "path";
 const UPLOAD_FOLDER = "uploaded";
+const PARSED_FOLDER = "parsed";
+
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -40,12 +42,6 @@ export class ImportServiceStack extends cdk.Stack {
       bundling: {
         externalModules: ["@aws-sdk/client-s3"],
       },
-      environment: {
-        REGION: "us-east-1",
-        UPLOAD_BUCKET: s3Bucket.bucketName,
-        UPLOAD_FOLDER,
-        EXPIRATION_SECONDS: "30",
-      },
       depsLockFilePath: join(__dirname, "..", "lambdas", "package-lock.json"),
       runtime: Runtime.NODEJS_18_X,
     };
@@ -55,6 +51,12 @@ export class ImportServiceStack extends cdk.Stack {
     const importProductsFile = new NodejsFunction(this, "importProductsFile", {
       entry: join(__dirname, "..", "lambdas", "importProductsFile.ts"),
       ...nodeJsFunctionProps,
+      environment: {
+        REGION: "us-east-1",
+        UPLOAD_BUCKET: s3Bucket.bucketName,
+        UPLOAD_FOLDER,
+        EXPIRATION_SECONDS: "30",
+      },
     });
 
     s3Bucket.grantPut(importProductsFile);
@@ -112,6 +114,12 @@ export class ImportServiceStack extends cdk.Stack {
     const importFileParser = new NodejsFunction(this, "importFileParser", {
       entry: join(__dirname, "..", "lambdas", "importFileParser.ts"),
       ...nodeJsFunctionProps,
+      environment: {
+        REGION: "us-east-1",
+        UPLOAD_BUCKET: s3Bucket.bucketName,
+        UPLOAD_FOLDER,
+        PARSED_FOLDER,
+      },
     });
 
     importFileParser.addEventSource(

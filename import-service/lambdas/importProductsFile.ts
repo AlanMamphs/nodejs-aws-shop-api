@@ -5,7 +5,7 @@ import { lambdaResp, withLogger } from "./utils";
 
 const REGION = process.env.REGION || "us-east-1";
 const BUCKET = process.env.UPLOAD_BUCKET || "upload_bucket";
-const UPLOAD_FOLDER = process.env.UPLOAD_FOLDER || "updated";
+const UPLOAD_FOLDER = process.env.UPLOAD_FOLDER || "uploaded";
 const EXPIRATION_SECONDS = process.env.EXPIRATION_SECONDS || "30";
 
 const client = new S3Client({ region: REGION });
@@ -28,7 +28,7 @@ export const handler: Handler<APIGatewayEvent> = withLogger(async (event) => {
         },
       });
     }
-    const clientUrl = await createPresignedUrl({
+    const uploadUrl = await createPresignedUrl({
       region: REGION,
       bucket: BUCKET,
       key: `${UPLOAD_FOLDER}/${name}`,
@@ -37,7 +37,7 @@ export const handler: Handler<APIGatewayEvent> = withLogger(async (event) => {
     return lambdaResp({
       statusCode: 200,
       body: {
-        data: clientUrl,
+        uploadUrl,
       },
     });
   } catch (err) {

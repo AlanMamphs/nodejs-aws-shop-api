@@ -57,7 +57,6 @@ it("ImportFileParser can parse the file", async () => {
 });
 
 it("ImportFileParser handles error", async () => {
-  const consoleLogSpy = jest.spyOn(console, "log");
   // create Stream from file
   const stream = createReadStream("tests/test.csv");
 

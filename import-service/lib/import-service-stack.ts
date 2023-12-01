@@ -113,11 +113,11 @@ export class ImportServiceStack extends cdk.Stack {
 
     // Import File Parser Stack
 
-    // CsvUploadQueue
-    const uploadQueue = sqs.Queue.fromQueueArn(
+    // catalogItemsQueue
+    const catalogItemsQueue = sqs.Queue.fromQueueArn(
       this,
-      "CsvUploadQueue",
-      "arn:aws:sqs:us-east-1:941474354651:CsvUploadQueue"
+      "catalogItemsQueue",
+      "arn:aws:sqs:us-east-1:941474354651:catalogItemsQueue"
     );
 
 
@@ -129,7 +129,7 @@ export class ImportServiceStack extends cdk.Stack {
         UPLOAD_BUCKET: s3Bucket.bucketName,
         UPLOAD_FOLDER,
         PARSED_FOLDER,
-        SQS_URL: uploadQueue.queueUrl,
+        SQS_URL: catalogItemsQueue.queueUrl,
       },
     });
 
@@ -142,6 +142,6 @@ export class ImportServiceStack extends cdk.Stack {
 
     s3Bucket.grantReadWrite(importFileParser);
 
-    uploadQueue.grantSendMessages(importFileParser);
+    catalogItemsQueue.grantSendMessages(importFileParser);
   }
 }

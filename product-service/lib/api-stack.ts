@@ -213,12 +213,12 @@ export class ApiLambdaStack extends cdk.Stack {
 
     // CATALOG BATCH PROCESS. SQS + Lambda + SNS
     // A dead-letter queue is optional but it helps capture any failed messages.
-    const deadLetterQueue = new sqs.Queue(this, "CsvUploadDeadLetterQueue", {
-      queueName: "CsvUploadDeadLetterQueue",
+    const deadLetterQueue = new sqs.Queue(this, "catalogItemsDeadLetterQueue", {
+      queueName: "catalogItemsDeadLetterQueue",
       retentionPeriod: cdk.Duration.days(7),
     });
-    const uploadQueue = new sqs.Queue(this, "CsvUploadQueue", {
-      queueName: "CsvUploadQueue",
+    const catalogItemsQueue = new sqs.Queue(this, "catalogItemsQueue", {
+      queueName: "catalogItemsQueue",
       visibilityTimeout: cdk.Duration.seconds(30),
       deadLetterQueue: {
         maxReceiveCount: 1,
@@ -243,7 +243,9 @@ export class ApiLambdaStack extends cdk.Stack {
       "alisher.mamunov@icloud.com",
       {
         filterPolicy: {
-          totalCount: sns.SubscriptionFilter.numericFilter({ lessThanOrEqualTo: 20 }),
+          totalCount: sns.SubscriptionFilter.numericFilter({
+            lessThanOrEqualTo: 20,
+          }),
         },
       }
     );
@@ -266,11 +268,11 @@ export class ApiLambdaStack extends cdk.Stack {
     );
 
     catalogBatchProcess.addEventSource(
-      new SqsEventSource(uploadQueue, {
+      new SqsEventSource(catalogItemsQueue, {
         batchSize: 5,
       })
     );
-    uploadQueue.grantConsumeMessages(catalogBatchProcess);
+    catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
     deadLetterQueue.grantSendMessages(catalogBatchProcess);
 
     ProductsTable.grantReadWriteData(catalogBatchProcess);

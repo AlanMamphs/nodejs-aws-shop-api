@@ -1,6 +1,8 @@
 import { expect, it, jest } from "@jest/globals";
 
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { SQSClient, GetQueueAttributesCommand } from "@aws-sdk/client-sqs";
+
 import { sdkStreamMixin } from "@aws-sdk/util-stream-node";
 import { mockClient } from "aws-sdk-client-mock";
 import { createReadStream } from "fs";
@@ -9,6 +11,7 @@ import { handler } from "../importFileParser";
 import { S3EventRecord } from "aws-lambda";
 
 const s3Mock = mockClient(S3Client);
+const sqsMock = mockClient(SQSClient);
 
 const testEvent: { Records: Partial<S3EventRecord>[] } = {
   Records: [
@@ -35,7 +38,6 @@ const testEvent: { Records: Partial<S3EventRecord>[] } = {
 };
 
 it("ImportFileParser can parse the file", async () => {
-  const consoleLogSpy = jest.spyOn(console, "log");
   // create Stream from file
   const stream = createReadStream("tests/test.csv");
 
@@ -43,17 +45,12 @@ it("ImportFileParser can parse the file", async () => {
   const sdkStream = sdkStreamMixin(stream);
 
   s3Mock.on(GetObjectCommand).resolves({ Body: sdkStream });
-
-  const s3 = new S3Client({});
+  expect(sqsMock.send.callCount).toBe(0);
 
   // @ts-expect-error Event is mocked
   const result = await handler(testEvent, {}, () => ({}));
 
-  const recordsCalls = consoleLogSpy.mock.calls.filter(
-    ([firstArg]) => firstArg === "Record:"
-  );
-  expect(recordsCalls).toHaveLength(4);
-  consoleLogSpy.mockRestore();
+  expect(sqsMock.send.callCount).toBe(1);
 });
 
 it("ImportFileParser handles error", async () => {

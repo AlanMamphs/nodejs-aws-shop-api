@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ddb } from "./dynamoDBClient";
 import { snsClient } from "./snsClient";
 import { lambdaResp, withLogger } from "./utils";
-import { PublishCommand, MessageAttributeValue } from "@aws-sdk/client-sns";
+import { PublishCommand } from "@aws-sdk/client-sns";
 
 const PRODUCT_TABLE_NAME = process.env.PRODUCT_TABLE_NAME || "Products";
 const STOCK_TABLE_NAME = process.env.STOCK_TABLE_NAME || "Stock";

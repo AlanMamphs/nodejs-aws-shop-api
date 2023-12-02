@@ -5,5 +5,6 @@ const config: Config.InitialOptions = {
   transform: {
     "^.+\\.tsx?$": "ts-jest",
   },
+  preset: "@shelf/jest-dynamodb",
 };
 export default config;

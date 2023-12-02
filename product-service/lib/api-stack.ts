@@ -237,6 +237,7 @@ export class ApiLambdaStack extends cdk.Stack {
         filterPolicy: {
           totalCount: sns.SubscriptionFilter.numericFilter({ greaterThan: 20 }),
         },
+        json: true,
       }
     );
     const email2Subscription = new subscriptions.EmailSubscription(
@@ -247,6 +248,7 @@ export class ApiLambdaStack extends cdk.Stack {
             lessThanOrEqualTo: 20,
           }),
         },
+        json: true,
       }
     );
     productTopic.addSubscription(email1Subscription);

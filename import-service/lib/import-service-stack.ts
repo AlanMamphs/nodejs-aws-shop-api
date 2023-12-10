@@ -14,6 +14,8 @@ import {
   NodejsFunctionProps,
 } from "aws-cdk-lib/aws-lambda-nodejs";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+
 import { Construct } from "constructs";
 import { join } from "path";
 const UPLOAD_FOLDER = "uploaded";
@@ -111,6 +113,14 @@ export class ImportServiceStack extends cdk.Stack {
 
     // Import File Parser Stack
 
+    // catalogItemsQueue
+    const catalogItemsQueue = sqs.Queue.fromQueueArn(
+      this,
+      "catalogItemsQueue",
+      "arn:aws:sqs:us-east-1:941474354651:catalogItemsQueue"
+    );
+
+
     const importFileParser = new NodejsFunction(this, "importFileParser", {
       entry: join(__dirname, "..", "lambdas", "importFileParser.ts"),
       ...nodeJsFunctionProps,
@@ -119,6 +129,7 @@ export class ImportServiceStack extends cdk.Stack {
         UPLOAD_BUCKET: s3Bucket.bucketName,
         UPLOAD_FOLDER,
         PARSED_FOLDER,
+        SQS_URL: catalogItemsQueue.queueUrl,
       },
     });
 
@@ -130,5 +141,7 @@ export class ImportServiceStack extends cdk.Stack {
     );
 
     s3Bucket.grantReadWrite(importFileParser);
+
+    catalogItemsQueue.grantSendMessages(importFileParser);
   }
 }

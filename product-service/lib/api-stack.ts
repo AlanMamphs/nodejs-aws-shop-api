@@ -2,6 +2,14 @@ import * as cdk from "aws-cdk-lib";
 import * as apigw from "aws-cdk-lib/aws-apigateway";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import * as dynamo from "aws-cdk-lib/aws-dynamodb";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as sns from "aws-cdk-lib/aws-sns";
+import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
+import {
+  SqsEventSource,
+  SnsEventSource,
+} from "aws-cdk-lib/aws-lambda-event-sources";
+
 import {
   NodejsFunction,
   NodejsFunctionProps,
@@ -20,6 +28,7 @@ import {
   STOCK_PRIMARY_KEY,
   STOCK_TABLE_NAME,
 } from "../lambdas/constants";
+import { SqsDestination } from "aws-cdk-lib/aws-lambda-destinations";
 
 export class ApiLambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -55,13 +64,10 @@ export class ApiLambdaStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY, // NOT recommended for production code
       billing: dynamo.Billing.onDemand(),
     });
+
     const nodeJsFunctionProps: NodejsFunctionProps = {
       bundling: {
-        externalModules: [
-          "aws-sdk", // Use the 'aws-sdk' available in the Lambda runtime
-          "@aws-sdk/client-dynamodb",
-          "@aws-sdk/lib-dynamodb",
-        ],
+        externalModules: ["@aws-sdk/client-dynamodb", "@aws-sdk/lib-dynamodb"],
       },
       environment: {
         PRODUCT_TABLE_NAME,
@@ -204,5 +210,79 @@ export class ApiLambdaStack extends cdk.Stack {
     });
 
     new SwaggerUi(this, "SwaggerUI", { resource: api.root });
+
+    // CATALOG BATCH PROCESS. SQS + Lambda + SNS
+    // A dead-letter queue is optional but it helps capture any failed messages.
+    const deadLetterQueue = new sqs.Queue(this, "catalogItemsDeadLetterQueue", {
+      queueName: "catalogItemsDeadLetterQueue",
+      retentionPeriod: cdk.Duration.days(7),
+    });
+    const catalogItemsQueue = new sqs.Queue(this, "catalogItemsQueue", {
+      queueName: "catalogItemsQueue",
+      visibilityTimeout: cdk.Duration.seconds(30),
+      deadLetterQueue: {
+        maxReceiveCount: 1,
+        queue: deadLetterQueue,
+      },
+    });
+
+    // Create an SNS topic
+    const productTopic = new sns.Topic(this, "createProductTopic", {
+      displayName: "Create Product topic",
+    });
+
+    const email1Subscription = new subscriptions.EmailSubscription(
+      "mamunovalisher@gmail.com",
+      {
+        filterPolicy: {
+          totalCount: sns.SubscriptionFilter.numericFilter({ greaterThan: 20 }),
+        },
+        json: true,
+      }
+    );
+    const email2Subscription = new subscriptions.EmailSubscription(
+      "alisher.mamunov@icloud.com",
+      {
+        filterPolicy: {
+          totalCount: sns.SubscriptionFilter.numericFilter({
+            lessThanOrEqualTo: 20,
+          }),
+        },
+        json: true,
+      }
+    );
+    productTopic.addSubscription(email1Subscription);
+    productTopic.addSubscription(email2Subscription);
+
+    const catalogBatchProcess = new NodejsFunction(
+      this,
+      "catalogBatchProcess",
+      {
+        entry: join(__dirname, "..", "lambdas", "catalogBatchProcess.ts"),
+        ...nodeJsFunctionProps,
+        // sqs queue for unsuccessful invocations
+        onFailure: new SqsDestination(deadLetterQueue),
+        environment: {
+          ...nodeJsFunctionProps.environment,
+          EMAIL_TOPIC_ARN: productTopic.topicArn,
+        },
+      }
+    );
+
+    catalogBatchProcess.addEventSource(
+      new SqsEventSource(catalogItemsQueue, {
+        batchSize: 5,
+      })
+    );
+    catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
+    deadLetterQueue.grantSendMessages(catalogBatchProcess);
+
+    ProductsTable.grantReadWriteData(catalogBatchProcess);
+    StockTable.grantReadWriteData(catalogBatchProcess);
+
+    // Grant the Lambda function permission to publish to the SNS topic
+    productTopic.grantPublish(catalogBatchProcess);
+
+    catalogBatchProcess.addEventSource(new SnsEventSource(productTopic));
   }
 }

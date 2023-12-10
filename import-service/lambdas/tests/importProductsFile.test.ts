@@ -31,7 +31,5 @@ it("should throw 400 error if no name", async () => {
   // @ts-expect-error Event is mocked
   const result = await handler(event, {}, () => {});
   expect(result.statusCode).toBe(400);
-  expect(JSON.parse(result.body).message).toContain(
-    "Missing name"
-  );
+  expect(JSON.parse(result.body).message).toContain("Missing name");
 });

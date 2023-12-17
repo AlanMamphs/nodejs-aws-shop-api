@@ -7,7 +7,7 @@ import {
   Model,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
-import { Runtime } from "aws-cdk-lib/aws-lambda";
+import { Runtime, Function } from "aws-cdk-lib/aws-lambda";
 import { S3EventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import {
   NodejsFunction,
@@ -67,8 +67,20 @@ export class ImportServiceStack extends cdk.Stack {
       importProductsFile
     );
     // Create an API Gateway resource for each of the CRUD operations
+    const tokenAuthorizer = new cdk.aws_apigateway.TokenAuthorizer(
+      this,
+      "basicTokenAuthorizer",
+      {
+        handler: Function.fromFunctionName(
+          this,
+          "basicAuthorizerLambda",
+          "basicAuthorizer"
+        ),
+      }
+    );
+
     const api = new RestApi(this, "productsAPI", {
-      restApiName: "Products Service",
+      restApiName: "Import Service",
       defaultCorsPreflightOptions: {
         allowOrigins: Cors.ALL_ORIGINS,
         allowMethods: Cors.ALL_METHODS,
@@ -77,8 +89,19 @@ export class ImportServiceStack extends cdk.Stack {
       deployOptions: {
         stageName: "dev",
       },
-      // In case you want to manage binary types, uncomment the following
-      // binaryMediaTypes: ["*/*"],
+      defaultMethodOptions: {
+        authorizer: tokenAuthorizer,
+      },
+    });
+
+    api.addGatewayResponse("GatewayResponse4XX", {
+      type: cdk.aws_apigateway.ResponseType.DEFAULT_4XX,
+      responseHeaders: {
+        "Access-Control-Allow-Origin": "'*'",
+        "Access-Control-Allow-Headers":
+          "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        "Access-Control-Allow-Methods": "'OPTIONS,GET,PUT'",
+      },
     });
 
     const PreSignedURLResponse = new Model(this, "PreSignedURLResponse", {
@@ -97,6 +120,15 @@ export class ImportServiceStack extends cdk.Stack {
         {
           statusCode: "200",
           responseModels: { "application/json": PreSignedURLResponse },
+          responseParameters: {},
+        },
+        {
+          statusCode: "401",
+          responseModels: { "application/json": Model.ERROR_MODEL },
+        },
+        {
+          statusCode: "403",
+          responseModels: { "application/json": Model.ERROR_MODEL },
         },
         {
           statusCode: "500",
@@ -119,7 +151,6 @@ export class ImportServiceStack extends cdk.Stack {
       "catalogItemsQueue",
       "arn:aws:sqs:us-east-1:941474354651:catalogItemsQueue"
     );
-
 
     const importFileParser = new NodejsFunction(this, "importFileParser", {
       entry: join(__dirname, "..", "lambdas", "importFileParser.ts"),

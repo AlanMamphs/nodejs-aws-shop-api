@@ -17,12 +17,18 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "eb-init": "eb init --platform node.js --region us-east-1",
+    "eb-create": "eb create development --single --cname bff-service-develop",
+    "eb-terminate": "eb terminate",
+    "set-env": "eb setenv `cat .env.eb | sed '/^#/ d' | sed '/^$/ d'`"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
+    "axios": "^1.6.5",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
